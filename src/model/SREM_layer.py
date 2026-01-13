@@ -21,18 +21,18 @@ class SREM(Layer):
                  **kwargs):
         super().__init__(**kwargs)
 
-        # --- hyperparameters (paper-level objects)
+        # hyperparameters
         self.lookback = lookback          # K
         self.num_features = num_features # F
         self.embed_dim = embed_dim        # d
 
-        # --- feature embedding
+        # feature embedding
         self.input_projection = Dense(embed_dim)
 
-        # --- positional encoding (time only)
+        # positional encoding 
         self.positional_encoding = tm.PositionalEncoding(embed_dim)
 
-        # --- shared temporal encoder
+        # shared transformer encoder
         self.temporal_encoder = tm.TransformerEncoder(
             num_layers=num_layers,
             embed_dim=embed_dim,
@@ -46,32 +46,34 @@ class SREM(Layer):
 
     def call(self, inputs, training=False):
         """
-        inputs:  (B, N, K, F)
-        returns: (B, N, K, d)
+        inputs:  (Batch (B), Assets (N), Lookback Window (K), Features (F))
+        returns: (B, N, K, embed dim (d))
         """
 
-        B = tf.shape(inputs)[0]
-        N = tf.shape(inputs)[1]
+        B = tf.shape(inputs)[0] # batch size
+        N = tf.shape(inputs)[1] # number of assets
 
-        # ---- flatten asset dimension (shared SREM)
+        # flatten asset dimension 
+        # Dimension: (B*N, K, F)
         x = tf.reshape(
             inputs,
             (B * N, self.lookback, self.num_features)
-        )  # (B*N, K, F)
+        ) 
 
-        # ---- feature → latent projection
+        # embed features
         x = self.input_projection(x)
 
-        # ---- add temporal positional encoding
+        # positional encoding
         x = self.positional_encoding(x)
 
-        # ---- temporal self-attention (shared weights)
+        # temporal self-attention (shared weights)
         x = self.temporal_encoder(x, training=training)
 
+        # normalization and regularization
         x = self.norm(x)
         x = self.dropout(x, training=training)
 
-        # ---- restore asset dimension
+        # restore shape
         x = tf.reshape(
             x,
             (B, N, self.lookback, self.embed_dim)
