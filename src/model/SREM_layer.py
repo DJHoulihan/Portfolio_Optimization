@@ -1,48 +1,51 @@
-import os
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense, LayerNormalization, Dropout
-import TransformerModel as tm
+import src.model.TransformerModel as tm
+import os
+import sys
+
+# Add project root to sys.path (two levels up from current file)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.append(project_root)
+from config.config import get_config
 
 class SREM(Layer):
     """
-    Shared Representation Extraction Module (AlphaPortfolio)
+    Shared Representation Extraction Module (taken from AlphaPortfolio)
     """
 
-    def __init__(self,
-                 lookback,
-                 num_features,
-                 embed_dim,
-                 num_heads,
-                 ff_dim,
-                 num_layers,
-                 dropout_rate=0.1,
-                 **kwargs):
+    def __init__(self, config, dropout_rate=0.1, **kwargs):
         super().__init__(**kwargs)
 
         # hyperparameters
-        self.lookback = lookback          # K
-        self.num_features = num_features # F
-        self.embed_dim = embed_dim        # d
+        self.lookback = int(config['SREM']['lookback'])       # K
+        self.num_features = int(config['SREM']['num_features']) # F
+        self.embed_dim = int(config['SREM']['embed_dim'])   # d
+
+        # parameters for transformer
+        self.num_layers = int(config['SREM']['num_layers'])
+        self.num_heads = int(config['SREM']['num_heads'])
+        self.ff_dim = int(config['SREM']['ff_dim'])
+        self.dropout_rate = float(config['SREM']['dropout_rate'])
 
         # feature embedding
-        self.input_projection = Dense(embed_dim)
+        self.input_projection = Dense(self.embed_dim)
 
         # positional encoding 
-        self.positional_encoding = tm.PositionalEncoding(embed_dim)
+        self.positional_encoding = tm.PositionalEncoding(self.embed_dim)
 
         # shared transformer encoder
         self.temporal_encoder = tm.TransformerEncoder(
-            num_layers=num_layers,
-            embed_dim=embed_dim,
-            num_heads=num_heads,
-            ff_dim=ff_dim,
-            rate=dropout_rate
+            num_layers= self.num_layers,
+            embed_dim= self.embed_dim,
+            num_heads= self.num_heads,
+            ff_dim= self.ff_dim,
+            rate= self.dropout_rate
         )
 
         self.norm = LayerNormalization(epsilon=1e-6)
-        self.dropout = Dropout(dropout_rate)
+        self.dropout = Dropout(self.dropout_rate)
 
     def call(self, inputs, training=False):
         """
@@ -69,14 +72,11 @@ class SREM(Layer):
         # temporal self-attention (shared weights)
         x = self.temporal_encoder(x, training=training)
 
-        # normalization and regularization
+        # normalization
         x = self.norm(x)
         x = self.dropout(x, training=training)
 
-        # restore shape
-        x = tf.reshape(
-            x,
-            (B, N, self.lookback, self.embed_dim)
-        )
+        # ---- restore asset dimension
+        x = tf.reshape(x, (B, N, self.lookback, self.embed_dim))
 
         return x

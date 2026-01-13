@@ -10,6 +10,17 @@ class ConfigHandler:
         self.config_parser = configparser.ConfigParser()
     
     def get_config(self):
+        config = super().get_config()
+        config.update({
+            "num_layers": self.num_layers,
+            "num_heads": self.num_heads,
+            "ff_dim": self.ff_dim,
+            "dropout_rate": self.dropout_rate,
+            "lookback": self.lookback,
+            "num_features": self.num_features,
+            "embed_dim": self.embed_dim,
+            })
+        
         return self.config_parser
     
 
