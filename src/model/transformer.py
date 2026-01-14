@@ -3,7 +3,7 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense, LayerNormalization, Dropout
-
+import logging
 
 class MultiHeadSelfAttention(Layer):
     def __init__(self, embed_dim, num_heads = 8):
@@ -30,19 +30,6 @@ class MultiHeadSelfAttention(Layer):
         output = tf.matmul(weights, value)
         return output, weights
     
-    # def attention(self, query, key, value):
-    #     '''
-    #     Compute attention scores and apply them to create output representation.
-    #     This uses the scaled dot-product attention mechanism.
-    #     '''
-
-    #     score = tf.matmul(query, key, transpose_b = True)
-    #     dim_key = tf.cast(tf.shape(key)[-1], tf.float32)
-    #     scaled_score = score / tf.math.sqrt(dim_key)
-    #     weights = tf.nn.softmax(scaled_score, axis = -1)
-    #     output = tf.matmul(weights, value)
-    #     return output, weights
-    
     def split_heads(self, x, batch_size):
         x = tf.reshape(x, (batch_size, -1, self.num_heads, self.projection_dim))
         return tf.transpose(x, perm = [0,2,1,3])
@@ -59,34 +46,18 @@ class MultiHeadSelfAttention(Layer):
         key   = self.split_heads(key, batch_size)
         value = self.split_heads(value, batch_size)
 
-        # Causal mask 
+        # Causal mask - Not used here
         # mask shape: (1, 1, T, T)
         # upper triangular (future positions) = 1 -> block them
-        causal_mask = tf.linalg.band_part(tf.ones((seq_len, seq_len),dtype=tf.float32), -1, 0)
-        causal_mask = 1 - causal_mask
-        causal_mask = tf.reshape(causal_mask, (1, 1, seq_len, seq_len))
+        # causal_mask = tf.linalg.band_part(tf.ones((seq_len, seq_len),dtype=tf.float32), -1, 0)
+        # causal_mask = 1 - causal_mask
+        # causal_mask = tf.reshape(causal_mask, (1, 1, seq_len, seq_len))
 
-        attention_output, _ = self.attention(query, key, value, mask=causal_mask)
+        attention_output, _ = self.attention(query, key, value, mask=None)
 
         attention_output = tf.transpose(attention_output, perm=[0, 2, 1, 3])
         concat_attention = tf.reshape(attention_output, (batch_size, seq_len, self.embed_dim))
         return self.combine_heads(concat_attention)
-    
-    # def call(self, inputs):
-    #     batch_size = tf.shape(inputs)[0]
-    #     query = self.query_dense(inputs)
-    #     key = self.key_dense(inputs)
-    #     value = self.value_dense(inputs)
-
-    #     query = self.split_heads(query, batch_size)
-    #     key = self.split_heads(key, batch_size)
-    #     value = self.split_heads(value, batch_size)
-
-    #     attention_output, _ = self.attention(query, key, value)
-    #     attention_output = tf.transpose(attention_output, perm = [0,2,1,3])
-    #     concat_attention = tf.reshape(attention_output, (batch_size, -1, self.embed_dim))
-    #     return self.combine_heads(concat_attention)
-    
 
 class TransformerBlock(Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate = 0.1):
@@ -129,6 +100,8 @@ class PositionalEncoding(Layer):
 class TransformerEncoder(Layer):
     def __init__(self, num_layers, embed_dim, num_heads, ff_dim, rate=0.1):
         super(TransformerEncoder, self).__init__()
+        # logging.info(f"Initializing Transformer Encoder with d_model={embed_dim}, nhead={num_heads}, num_layers={num_layers}")
+
         self.enc_layers = [TransformerBlock(embed_dim, num_heads, ff_dim, rate)
                            for _ in range(num_layers)]
         self.dropout = Dropout(rate)
@@ -139,13 +112,3 @@ class TransformerEncoder(Layer):
         for layer in self.enc_layers:
             x = layer(x, training=training)
         return x
-    
-
-
-
-# def create_dataset(data, time_step = 1):
-#     X, Y = [], []
-#     for i in range(len(data) - time_step - 1):
-#         X.append(data[i:(i+time_step),:])
-#         Y.append(data[i+time_step,0])
-#     return temporal_zscore_normalize(np.array(X)), np.array(Y)
