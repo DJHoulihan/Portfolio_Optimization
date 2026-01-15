@@ -1,33 +1,35 @@
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense, LayerNormalization, Dropout
-import src.model.TransformerModel as tm
+import transformer as tm
 import os
 import sys
+import logging
 
 # Add project root to sys.path (two levels up from current file)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_root)
-from config.config import get_config
+from config.config import load_config
+
+# config = load_config()
 
 class SREM(Layer):
     """
     Shared Representation Extraction Module (taken from AlphaPortfolio)
     """
 
-    def __init__(self, config, dropout_rate=0.1, **kwargs):
-        super().__init__(**kwargs)
-
+    def __init__(self, config, **kwargs):
+        super(SREM, self).__init__(**kwargs)
+        # logging.info(f"Initializing SREM with d_model={d_model}, nhead={nhead}, num_layers={num_layers}")
+        
         # hyperparameters
-        self.lookback = int(config['SREM']['lookback'])       # K
-        self.num_features = int(config['SREM']['num_features']) # F
-        self.embed_dim = int(config['SREM']['embed_dim'])   # d
+        self.lookback = config.lookback     # K
+        self.embed_dim = config.embed_dim   # d
 
-        # parameters for transformer
-        self.num_layers = int(config['SREM']['num_layers'])
-        self.num_heads = int(config['SREM']['num_heads'])
-        self.ff_dim = int(config['SREM']['ff_dim'])
-        self.dropout_rate = float(config['SREM']['dropout_rate'])
+        # hyperparameters for transformer
+        self.num_layers = config.num_layers
+        self.num_heads = config.num_heads
+        self.ff_dim = config.ff_dim
+        self.dropout_rate = config.dropout_rate
 
         # feature embedding
         self.input_projection = Dense(self.embed_dim)
@@ -46,22 +48,29 @@ class SREM(Layer):
 
         self.norm = LayerNormalization(epsilon=1e-6)
         self.dropout = Dropout(self.dropout_rate)
+        self.att_weight = Dense(1)
 
-    def call(self, inputs, training=False):
+    def call(self, x, training=False):
         """
         inputs:  (Batch (B), Assets (N), Lookback Window (K), Features (F))
         returns: (B, N, K, embed dim (d))
         """
 
-        B = tf.shape(inputs)[0] # batch size
-        N = tf.shape(inputs)[1] # number of assets
+        B = tf.shape(x)[0] # batch size
+        N = tf.shape(x)[1] # number of assets
+        K = tf.shape(x)[2]
+        F = tf.shape(x)[3]
+        d = self.embed_dim
+
+        if K != self.lookback:
+            ValueError('Unexpected number of assets.')
+
+        if d != self.embed_dim:
+            ValueError('Unexpected or incorrect embedding dimension.')
 
         # flatten asset dimension 
         # Dimension: (B*N, K, F)
-        x = tf.reshape(
-            inputs,
-            (B * N, self.lookback, self.num_features)
-        ) 
+        x = tf.reshape(x, (B * N, K, F)) 
 
         # embed features
         x = self.input_projection(x)
@@ -70,13 +79,17 @@ class SREM(Layer):
         x = self.positional_encoding(x)
 
         # temporal self-attention (shared weights)
-        x = self.temporal_encoder(x, training=training)
+        z = self.temporal_encoder(x, training=training)
 
         # normalization
-        x = self.norm(x)
-        x = self.dropout(x, training=training)
+        z = self.dropout(z, training=training)
 
         # ---- restore asset dimension
-        x = tf.reshape(x, (B, N, self.lookback, self.embed_dim))
+        z = tf.reshape(z, (B, N, K, d))
 
-        return x
+        # aggregate via attention scores -> (B, N, d)
+        att_scores = self.attn_weight(z)
+        att_weights = tf.nn.softmax(att_scores, axis = 2)
+        r = tf.reduce_sum(z * att_weights, axis = 2)
+
+        return r
