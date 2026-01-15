@@ -8,7 +8,9 @@ import sys
 # Add project root to sys.path (two levels up from current file)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_root)
-from config.config import get_config
+from config.config import load_config
+
+# config = load_config()
 
 class WinnerScore(Layer):
     def __init__(self, embed_dim):
@@ -38,10 +40,10 @@ class WinnerScore(Layer):
 
 class CAAN(Layer):
 
-    def __init__(self, config, **kwargs):
-        super().__init__(**kwargs)
-        
-        self.embed_dim = int(config['SREM']['embed_dim'])
+    def __init__(self, config):
+        super(CAAN, self).__init__()
+
+        self.embed_dim = config.embed_dim
         self.attention = tm.MultiHeadSelfAttention(embed_dim = self.embed_dim, num_heads= 1)
         self.winnerscore = WinnerScore(self.embed_dim)
 

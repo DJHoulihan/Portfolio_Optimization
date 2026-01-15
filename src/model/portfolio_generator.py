@@ -8,18 +8,19 @@ import sys
 # Add project root to sys.path (two levels up from current file)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_root)
-from config.config import get_config
+from config.config import load_config
 
+# config = load_config()
 
 class Portfolio_Generator(Layer):
-    def __init__(self, config, fraction: tf.float32 = 0.5):
+    def __init__(self, config):
         super(Portfolio_Generator, self).__init__()
-        self.fraction = fraction
+        self.fraction = config.fraction
     
     def call(self, s, mask = None):
 
-        N = tf.shape(s)[1]
         B = tf.shape(s)[0]
+        N = tf.shape(s)[1]
         d = tf.shape(s)[2]
 
         G = tf.maximum(1, tf.cast(tf.math.floor(self.fraction * tf.cast(N, tf.float32)), tf.int32))
@@ -28,15 +29,16 @@ class Portfolio_Generator(Layer):
             s = tf.where(mask==0, tf.constant(-np.inf, dtype = tf.float32),s)
         
         # first, sort assets
-        sorted_values, sort_indices = tf.nn.top_k(tf.reduce_max(s, axis=-1), k = N, sorted = True)
+        s_max = tf.reduce_max(s, axis=-1)
+        sorted_values, sort_indices = tf.nn.top_k(s_max, k = N, sorted = True)
 
         # select top G and bottom G asset indices
         top_indices = sort_indices[:, :G] # [B, G]
         bottom_indices = sort_indices[:, -G:] # [B, G]
 
         # select top and bottom scores (vectors)
-        top_scores = tf.gather(s, top_indices, batch_dims = 1) # [B, G, d]
-        bottom_scores = tf.gather(s, bottom_indices, batch_dims = 1) # [B, G, d]
+        top_scores = tf.gather(s_max, top_indices, batch_dims = 1) # [B, G, d]
+        bottom_scores = tf.gather(s_max, bottom_indices, batch_dims = 1) # [B, G, d]
 
         # calculate top and bottom weights
         top_weights = tf.nn.softmax(top_scores, axis=1)
