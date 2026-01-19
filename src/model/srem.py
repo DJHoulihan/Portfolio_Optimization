@@ -5,12 +5,6 @@ import os
 import sys
 import logging
 
-# Add project root to sys.path (two levels up from current file)
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-sys.path.append(project_root)
-from config.config import load_config
-
-# config = load_config()
 
 class SREM(Layer):
     """
