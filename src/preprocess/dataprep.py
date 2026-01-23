@@ -119,35 +119,59 @@ def build_obs_windows(raw_inputs, K):
 #     return X_out, y_out
 
 # def create_dataset(X: pd.DataFrame, y: pd.DataFrame, time_step=20):
-#     """
-#     X: (T, num_features)
-#     y: (T, 1)
-#     """
+#     '''
+#     Creating rolling look-back windows to create sequences of data.
+
+#     X: pd.DataFrame containing financial features (T, num_features)
+#     y: pd.DataFrame containing the next-day excess returns (T, 1)
+#     time_step: int that determines the lookback window length
+
+#     returns:
+#     X_out: np.array containing features within lookback wndows (T-time_step, time_step, num_features)
+#     y_out: np.array containing excess returns after lookback windows (T - time_step, 1)
+#     '''
 
 #     X_seq, Y_seq = [], []
-#     xscales = []; yscales = []
 #     for i in range(time_step, len(X)):
-#         # window of X
-#         X_window = X.iloc[i-time_step:i].values  # (time_step, features)
+#         X_seq.append(X.iloc[i-time_step:i])
+#         Y_seq.append(y.iloc[i])
 
-#         # window of y (used ONLY for mean/std)
-#         y_window = y.iloc[i-time_step:i].values  # (time_step, 1)
-#         y_mean = y_window.mean()
-#         y_std  = y_window.std() + 1e-8
+    
+#     X_out = temporal_zscore_normalize(X_seq)
+#     y_out = np.array(Y_seq)
 
-#         # scale X window
-#         scalerx = StandardScaler()
-#         X_norm = scalerx.fit_transform(X_window[np.newaxis, ...][0])
-#         xscales.append(scalerx)
+#     return X_out, y_out
 
-#         # scale NEXT y (target), using y-window stats
-#         scalery = StandardScaler()
-#         y_next = y.iloc[i].values  # unscaled
-#         y_next_norm = scalery.fit_transform(y_next)
-#         yscales.append(scalery)
+# # def create_dataset(X: pd.DataFrame, y: pd.DataFrame, time_step=20):
+# #     """
+# #     X: (T, num_features)
+# #     y: (T, 1)
+# #     """
 
-#         X_seq.append(X_norm)
-#         Y_seq.append(y_next_norm)
+# #     X_seq, Y_seq = [], []
+# #     xscales = []; yscales = []
+# #     for i in range(time_step, len(X)):
+# #         # window of X
+# #         X_window = X.iloc[i-time_step:i].values  # (time_step, features)
 
-#     return np.array(X_seq), np.array(Y_seq), xscales, yscales
+# #         # window of y (used ONLY for mean/std)
+# #         y_window = y.iloc[i-time_step:i].values  # (time_step, 1)
+# #         y_mean = y_window.mean()
+# #         y_std  = y_window.std() + 1e-8
+
+# #         # scale X window
+# #         scalerx = StandardScaler()
+# #         X_norm = scalerx.fit_transform(X_window[np.newaxis, ...][0])
+# #         xscales.append(scalerx)
+
+# #         # scale NEXT y (target), using y-window stats
+# #         scalery = StandardScaler()
+# #         y_next = y.iloc[i].values  # unscaled
+# #         y_next_norm = scalery.fit_transform(y_next)
+# #         yscales.append(scalery)
+
+# #         X_seq.append(X_norm)
+# #         Y_seq.append(y_next_norm)
+
+# #     return np.array(X_seq), np.array(Y_seq), xscales, yscales
 
