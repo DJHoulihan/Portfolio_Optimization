@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Model
-from ..model import portfolio_generator as pg
-from ..model import srem as sr
-from ..model import caan as cn
+from src.model import portfolio_generator as pg
+from src.model import srem as sr
+from src.model import caan as cn
 
 class PortfolioAgentCritic(Model):
     def __init__(self, config):
