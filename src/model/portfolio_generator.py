@@ -20,7 +20,7 @@ class PortfolioGenerator(Layer):
 
         B = tf.shape(s)[0]
         N = tf.shape(s)[1]
-        d = tf.shape(s)[2]
+        # d = tf.shape(s)[2]
 
         G = tf.maximum(1, tf.cast(tf.math.floor(self.fraction * tf.cast(N, tf.float32)), tf.int32))
 
@@ -36,8 +36,8 @@ class PortfolioGenerator(Layer):
         bottom_indices = sort_indices[:, -G:] # [B, G]
 
         # select top and bottom scores (vectors)
-        top_scores = tf.gather(s_max, top_indices, batch_dims = 1) # [B, G, d]
-        bottom_scores = tf.gather(s_max, bottom_indices, batch_dims = 1) # [B, G, d]
+        top_scores = tf.gather(s_max, top_indices, batch_dims = 1) # [B, G]
+        bottom_scores = tf.gather(s_max, bottom_indices, batch_dims = 1) # [B, G]
 
         # calculate top and bottom weights
         top_weights = tf.nn.softmax(top_scores, axis=1)
@@ -67,12 +67,3 @@ class PortfolioGenerator(Layer):
                                                         )
         
         return portfolio_weights, sort_indices
-        
-
-
-
-
-
-
-        
-
