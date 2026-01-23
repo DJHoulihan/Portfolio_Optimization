@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
-import transformer as tm
 import os
 import sys
 
@@ -12,9 +11,9 @@ from config.config import load_config
 
 # config = load_config()
 
-class Portfolio_Generator(Layer):
+class PortfolioGenerator(Layer):
     def __init__(self, config):
-        super(Portfolio_Generator, self).__init__()
+        super(PortfolioGenerator, self).__init__()
         self.fraction = config.fraction
     
     def call(self, s, mask = None):
