@@ -1,9 +1,76 @@
 import numpy as np
+<<<<<<< Updated upstream
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 #
 def preprocess(df: pd.DataFrame, drop_cols=None):
     df = df.copy()
+=======
+# import pandas as pd
+
+def build_features(raw_features):
+    """
+    raw_features: (N, T, F)
+    Assumed to be causal features
+    """
+    features = raw_features.astype(np.float32)
+
+    # Replace NaNs using forward fill across time
+    for i in range(features.shape[0]):
+        for f in range(features.shape[2]):
+            x = features[i, :, f]
+            mask = np.isnan(x)
+            if mask.any():
+                x[mask] = np.interp(
+                    np.flatnonzero(mask),
+                    np.flatnonzero(~mask),
+                    x[~mask]
+                )
+
+    # cross-sectional normalization per time
+    mean = features.mean(axis=0, keepdims=True)
+    std = features.std(axis=0, keepdims=True) + 1e-8
+    features = (features - mean) / std
+
+    return features
+
+def build_obs_windows(raw_inputs, K):
+    """
+    Parameters
+    ----------
+    raw_inputs : np.ndarray
+        Shape (N, T, F)
+        raw_inputs[i, t, f] is feature f for asset i known at time t
+
+    K : int
+        Lookback window length
+
+    Returns
+    -------
+    obs_windows : np.ndarray
+        Shape (B, N, K, F), where B = T - K + 1
+        obs_windows[b, i, k, f] corresponds to
+        raw_inputs[i, b + k, f]
+
+    time_index : np.ndarray
+        time_index[b] = t corresponding to window end time
+    """
+    N, T, F = raw_inputs.shape
+    B = T - K + 1
+
+    obs_windows = np.zeros((B, N, K, F), dtype=np.float32)
+    returns = np.zeros((N,K), dtype=np.float32)
+    for b in range(B):
+        # Window ends at time t = b + K - 1
+        obs_windows[b] = raw_inputs[:, b:b+K, :-1]
+        returns[b] = raw_inputs[:, b+ K, -1]
+
+    time_index = np.arange(K - 1, T)
+
+    return obs_windows, returns
+
+
+>>>>>>> Stashed changes
 
     # Identify training mode (has forward_returns)
     is_train = "forward_returns" in df.columns
