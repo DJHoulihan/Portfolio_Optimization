@@ -31,6 +31,11 @@ class TrainingConfig:
     batch_size: int
     epochs: int
     learning_rate: float
+    gamma: float
+    sharpe_lambda: float
+    reward_window: int
+    input_window: int
+
 
 @dataclass(frozen=True)
 class DataConfig:
@@ -67,6 +72,10 @@ def load_config() -> AppConfig:
         batch_size=parser.getint("TRAINING", "batch_size"),
         epochs=parser.getint("TRAINING", "epochs"),
         learning_rate=parser.getfloat("TRAINING", "learning_rate"),
+        gamma = parser.getfloat("TRAINING", "gamma"),
+        sharpe_lambda = parser.getfloat("TRAINING", "sharpe_lambda"),
+        reward_window = parser.getint("TRAINING", "reward_window"),
+        input_window = parser.getint("TRAINING", "input_window")
     )
 
     api = APIConfig(

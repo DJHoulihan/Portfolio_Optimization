@@ -1,64 +1,56 @@
 import numpy as np
-import pandas as pd
+# import pandas as pd
 
-def create_windows(data, K):
+def build_features(raw_features):
     """
-    data: np.array (N, T, F)
-    returns:
-        obs_windows: np.array (num_steps, N, K, F)
-        returns: np.array (num_steps, N)
+    raw_features: (N, T, F)
+    Assumed to be causal features
     """
-    N, T, F = data.shape
-    num_steps = T - K
+    features = raw_features.astype(np.float32)
 
-    obs_windows = []
-    returns = []
+    # Replace NaNs using forward fill across time
+    for i in range(features.shape[0]):
+        for f in range(features.shape[2]):
+            x = features[i, :, f]
+            mask = np.isnan(x)
+            if mask.any():
+                x[mask] = np.interp(
+                    np.flatnonzero(mask),
+                    np.flatnonzero(~mask),
+                    x[~mask]
+                )
 
-    for t in range(K, T):
-        obs_windows.append(data[:, t-K:t, :])
-        returns.append(data[:, t, -1])  # last column is return
+    # cross-sectional normalization per time
+    mean = features.mean(axis=0, keepdims=True)
+    std = features.std(axis=0, keepdims=True) + 1e-8
+    features = (features - mean) / std
+    return features
 
-    obs_windows = np.stack(obs_windows, axis=0)  # (num_steps, N, K, F)
-    returns = np.stack(returns, axis=0)          # (num_steps, N)
+def build_obs_windows(raw_inputs, K):
+    """
+    raw_inputs: (N, T, F)
+    Last column (F-1) is returns from t → t+1
+    """
 
-    return obs_windows, returns
+    N, T, F = raw_inputs.shape
+    B = T - K   # last window dropped to avoid t+1 overflow
 
-def train_val_test_split(obs, returns, train=0.6, val=0.2):
-    n = obs.shape[0]
-    t1 = int(n * train)
-    t2 = int(n * (train + val))
+    obs_windows = np.zeros((B, N, K, F-1), dtype=np.float32)
+    returns = np.zeros((B, N), dtype=np.float32)
 
-    train_obs, train_ret = obs[:t1], returns[:t1]
-    val_obs, val_ret = obs[t1:t2], returns[t1:t2]
-    test_obs, test_ret = obs[t2:], returns[t2:]
+    for b in range(B):
+        # window covers times [b ... b+K-1]
+        obs_windows[b] = raw_inputs[:, b:b+K, :-1]
 
-    return (train_obs, train_ret), (val_obs, val_ret), (test_obs, test_ret)
+        # reward uses return at time t = b+K-1 → t+1 = b+K
+        returns[b] = raw_inputs[:, b + K, -1]
+
+    time_index = np.arange(K - 1, T - 1)
+
+    return obs_windows, returns, time_index
 
 
-# def preprocess(df: pd.DataFrame, drop_cols=None):
-#     df = df.copy()
 
-#     # Identify training mode (has forward_returns)
-#     is_train = "forward_returns" in df.columns
-
-#     # Drop high-null columns only during training
-#     if is_train:
-#         print("Training data Preprocess")
-#         high_null_cols = [c for c in df.columns if df[c].isnull().mean() > 0.5]
-#         drop_cols = high_null_cols  # Save for test data
-#     elif drop_cols is not None:
-#         # For test data, drop same columns as training
-#         df = df.drop(columns=drop_cols, errors='ignore')
-
-#     # Fill missing values
-#     for col in df.columns:
-#         if df[col].dtype in ['float64', 'int64']:
-#             df[col] = df[col].fillna(df[col].median())
-#         else:
-#             if len(df[col].mode()) > 0:
-#                 df[col] = df[col].fillna(df[col].mode()[0])
-
-#     return df, drop_cols
 
 # def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
 #     df = df.copy()
@@ -101,6 +93,30 @@ def train_val_test_split(obs, returns, train=0.6, val=0.2):
 #     std  = np.std(X, axis=1, keepdims=True) + 1e-8     # avoid division by zero
 
 #     return (X - mean) / std
+
+# def create_dataset(X: pd.DataFrame, y: pd.DataFrame, time_step=20):
+#     '''
+#     Creating rolling look-back windows to create sequences of data.
+
+#     X: pd.DataFrame containing financial features (T, num_features)
+#     y: pd.DataFrame containing the next-day excess returns (T, 1)
+#     time_step: int that determines the lookback window length
+
+#     returns:
+#     X_out: np.array containing features within lookback wndows (T-time_step, time_step, num_features)
+#     y_out: np.array containing excess returns after lookback windows (T - time_step, 1)
+#     '''
+
+#     X_seq, Y_seq = [], []
+#     for i in range(time_step, len(X)):
+#         X_seq.append(X.iloc[i-time_step:i])
+#         Y_seq.append(y.iloc[i])
+
+    
+#     X_out = temporal_zscore_normalize(X_seq)
+#     y_out = np.array(Y_seq)
+
+#     return X_out, y_out
 
 # def create_dataset(X: pd.DataFrame, y: pd.DataFrame, time_step=20):
 #     '''

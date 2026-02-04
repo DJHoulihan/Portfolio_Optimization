@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
-import transformer as tm
 import os
 import sys
 
