@@ -3,10 +3,13 @@ import src.env.env as en
 import src.env.agent as ag
 import src.train.trainingfuncs as tfu
 import src.config.config as cf
+import src.preprocess.datapull as dp
+# import src.preprocess.dataprep as dpr
 
 def main(config):
     # ----- Data -----
-    obs_windows, returns = load_data(config.data)
+    datahandler = dp.DataHandler(config)
+    obs_windows, returns = datahandler.load_data(config.data)
 
     # ----- Environment -----
     env = en.PortfolioEnv(

@@ -1,45 +1,54 @@
 import numpy as np
 
 class PortfolioEnv:
-    def __init__(self, obs_windows, returns, num_envs):
-        """
-        obs_windows: (T, N, K, F)
-        returns: (T, N)
-        """
+    def __init__(self, obs_windows, returns, num_envs = 8, cost_rate=0.0):
         self.obs_windows = obs_windows
         self.returns = returns
         self.num_envs = num_envs
+        self.cost_rate = cost_rate
+
         self.T = obs_windows.shape[0]
-        self.t = np.zeros(num_envs, dtype=int)
+        self.N = returns.shape[1]
+
+        self.reset()
 
     def reset(self):
-        self.t = np.zeros(self.num_envs, dtype=int)
-        return self.obs_windows[self.t]  # (num_envs, N, K, F)
+        self.t = np.arange(self.num_envs)
+        self.prev_actions = np.ones((self.num_envs, self.N)) / self.N
+        return self.obs_windows[self.t]
+
+    def _normalize(self, action):
+        action = np.clip(action, 1e-6, 1.0)
+        return action / action.sum()
 
     def step(self, actions):
-        """
-        actions: (num_envs, N)
-        """
-        rewards = []
+        rewards = np.zeros(self.num_envs)
+        dones = np.zeros(self.num_envs, dtype=bool)
         next_obs = []
-        dones = []
 
         for i in range(self.num_envs):
             t = self.t[i]
-            r = self.returns[t]                # (N,)
-            reward = np.sum(actions[i] * r)    # scalar
-            rewards.append(reward)
+
+            action = self._normalize(actions[i])
+            r = self.returns[t]
+
+            reward = action @ r
+
+            turnover = np.sum(np.abs(action - self.prev_actions[i]))
+            reward -= self.cost_rate * turnover
+
+            rewards[i] = reward
+            self.prev_actions[i] = action
 
             self.t[i] += 1
-            done = self.t[i] >= self.T
-            dones.append(done)
+            dones[i] = self.t[i] >= self.T - 1
 
-            if not done:
-                next_obs.append(self.obs_windows[self.t[i]])
-            else:
+            if dones[i]:
                 next_obs.append(np.zeros_like(self.obs_windows[0]))
+            else:
+                next_obs.append(self.obs_windows[self.t[i]])
 
-        return np.stack(next_obs), np.array(rewards), np.array(dones), {}
+        return np.stack(next_obs), rewards, dones, {}
 
 
 class RolloutBuffer:
