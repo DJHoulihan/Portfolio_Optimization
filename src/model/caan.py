@@ -2,8 +2,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense, LayerNormalization, Dropout
 import transformer as tm
-import os
-import sys
 
 class WinnerScore(Layer):
     def __init__(self, embed_dim):
