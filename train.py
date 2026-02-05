@@ -7,9 +7,11 @@ import src.preprocess.datapull as dp
 # import src.preprocess.dataprep as dpr
 
 def main(config):
+    # config = cf.load_config()
+
     # ----- Data -----
     datahandler = dp.DataHandler(config)
-    obs_windows, returns = datahandler.load_data(config.data)
+    obs_windows, returns = datahandler.load_data()
 
     # ----- Environment -----
     env = en.PortfolioEnv(

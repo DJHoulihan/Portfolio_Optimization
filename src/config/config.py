@@ -33,8 +33,9 @@ class TrainingConfig:
     learning_rate: float
     gamma: float
     sharpe_lambda: float
-    reward_window: int
-    input_window: int
+    lookback: int
+    # reward_window: int
+    # input_window: int
 
 
 @dataclass(frozen=True)
@@ -47,12 +48,17 @@ class GenConfig:
     fraction: float
 
 @dataclass(frozen=True)
+class EnvConfig:
+    num_envs: int
+
+@dataclass(frozen=True)
 class AppConfig:
     srem: SREMConfig
     training: TrainingConfig
     api: APIConfig
     data: DataConfig
     gen: GenConfig
+    env: EnvConfig
 
 def load_config() -> AppConfig:
     
@@ -74,8 +80,9 @@ def load_config() -> AppConfig:
         learning_rate=parser.getfloat("TRAINING", "learning_rate"),
         gamma = parser.getfloat("TRAINING", "gamma"),
         sharpe_lambda = parser.getfloat("TRAINING", "sharpe_lambda"),
-        reward_window = parser.getint("TRAINING", "reward_window"),
-        input_window = parser.getint("TRAINING", "input_window")
+        lookback = parser.getint("TRAINING", "lookback")
+        # reward_window = parser.getint("TRAINING", "reward_window"),
+        # input_window = parser.getint("TRAINING", "input_window")
     )
 
     api = APIConfig(
@@ -91,10 +98,15 @@ def load_config() -> AppConfig:
         fraction=parser.getfloat("GEN", "fraction")
     )
 
+    env = EnvConfig(
+        num_envs=parser.getint("ENV", "num_envs")
+    )
+
     return AppConfig(
         srem=srem,
         training=training,
         api=api,        
         data=data,
-        gen=gen
+        gen=gen,
+        env=env
     )
