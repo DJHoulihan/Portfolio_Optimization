@@ -17,12 +17,12 @@ def temporal_zscore_normalize(X):
 
 class DataHandler:
     def __init__(self, config):
-        self.project_root = os.path.dirname(os.path.abspath(__file__))
+        # self.project_root = os.path.dirname(os.path.abspath(__file__))
         self.config = config
         self.lookback = config.training.lookback
     
     def load_data(self):
-        datafile = self.project_root / self.config.data.datapath / '*.txt'
+        datafile = self.config.data.data_path / '*.txt'
         return pd.read_csv(datafile, delimiter = ',')
     
     def create_sequences(self, df):
@@ -32,7 +32,7 @@ class DataHandler:
         data = df.values
         sequences = []
         for i in range(len(data) - self.lookback):
-            sequences.append(data[i:i+self.lookback])
+            sequences.append(temporal_zscore_normalize(data[i:i+self.lookback]))
         return np.array(sequences)  # shape: (num_samples, lookback, num_features)
 
 

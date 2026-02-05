@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense, LayerNormalization, Dropout
-import transformer as tm
+import src.model.transformer as tm
 import logging
 
 

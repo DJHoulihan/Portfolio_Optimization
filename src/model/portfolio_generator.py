@@ -7,14 +7,14 @@ import sys
 # Add project root to sys.path (two levels up from current file)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(project_root)
-from config.config import load_config
+from src.config.config import load_config
 
 # config = load_config()
 
 class PortfolioGenerator(Layer):
     def __init__(self, config):
         super(PortfolioGenerator, self).__init__()
-        self.fraction = config.fraction
+        self.fraction = config.gen.fraction
     
     def call(self, s, mask = None):
 

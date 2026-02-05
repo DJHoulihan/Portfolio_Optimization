@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Model
+from tensorflow.keras import Model
 from src.model import portfolio_generator as pg
 from src.model import srem as sr
 from src.model import caan as cn
