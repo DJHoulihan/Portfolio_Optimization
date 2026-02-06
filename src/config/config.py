@@ -18,8 +18,6 @@ class SREMConfig:
     num_heads: int
     ff_dim: int
     dropout_rate: float
-    lookback: int
-    num_features: int
     embed_dim: int
 
 @dataclass(frozen=True)
@@ -69,9 +67,8 @@ def load_config() -> AppConfig:
         num_heads=parser.getint("SREM", "num_heads"),
         ff_dim=parser.getint("SREM", "ff_dim"),
         dropout_rate=parser.getfloat("SREM", "dropout_rate"),
-        lookback=parser.getint("SREM", "lookback"),
-        num_features=parser.getint("SREM", "num_features"),
-        embed_dim=parser.getint("SREM", "embed_dim"),
+        # num_features=parser.getint("SREM", "num_features"),
+        embed_dim=parser.getint("SREM", "embed_dim")
     )
 
     training = TrainingConfig(

@@ -8,7 +8,7 @@ class MultiHeadSelfAttention(Layer):
     def __init__(self, embed_dim, num_heads = 8):
         super(MultiHeadSelfAttention, self).__init__()
         self.embed_dim = embed_dim
-        self.num_heads = num_heads
+        self.num_heads = num_heads 
         self.projection_dim = embed_dim // num_heads
         self.query_dense = Dense(embed_dim) # Q dense layer (what I'm looking for)
         self.key_dense = Dense(embed_dim) # K dense layer (what each position offers)

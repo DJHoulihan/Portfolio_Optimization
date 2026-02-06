@@ -11,7 +11,7 @@ class PortfolioAgentCritic(Model):
         self.caan = cn.CAAN(config)        # outputs (B, N,
         self.portfolio_gen = pg.PortfolioGenerator(config)
         self.value_head = tf.keras.layers.Dense(1)
-        self.d = config.srem.embed_dim
+        self.d = config.srem.embed_dim 
         self.log_sigma = tf.Variable(0.0)
 
     def call(self, x, mask = None, training=False):

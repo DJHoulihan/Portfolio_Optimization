@@ -13,15 +13,15 @@ class SREM(Layer):
         super(SREM, self).__init__(**kwargs)
         # logging.info(f"Initializing SREM with d_model={d_model}, nhead={nhead}, num_layers={num_layers}")
         
-        # hyperparameters
-        self.lookback = config.lookback     # K
-        self.embed_dim = config.embed_dim   # d
+        # hyperparameters 
+        self.lookback = config.training.lookback     # K
+        self.embed_dim = config.srem.embed_dim   # d
 
         # hyperparameters for transformer
-        self.num_layers = config.num_layers
-        self.num_heads = config.num_heads
-        self.ff_dim = config.ff_dim
-        self.dropout_rate = config.dropout_rate
+        self.num_layers = config.srem.num_layers
+        self.num_heads = config.srem.num_heads
+        self.ff_dim = config.srem.ff_dim
+        self.dropout_rate = config.srem.dropout_rate
 
         # feature embedding
         self.input_projection = Dense(self.embed_dim)

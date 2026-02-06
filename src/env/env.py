@@ -19,7 +19,7 @@ class PortfolioEnv:
 
     def _normalize(self, action):
         action = np.clip(action, 1e-6, 1.0)
-        return action / action.sum()
+        return action / action.sum() 
 
     def step(self, actions):
         rewards = np.zeros(self.num_envs)

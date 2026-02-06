@@ -33,7 +33,7 @@ def main(config):
         agent=agent,
         env=env,
         optimizer=optimizer,
-        num_epochs=config.training.num_epochs,
+        num_epochs=config.training.num_epochs, 
         rollout_len=config.training.rollout_len,
         gamma=config.training.gamma,
         sharpe_lambda=config.training.sharpe_lambda,
