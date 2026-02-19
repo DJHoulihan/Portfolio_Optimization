@@ -13,13 +13,13 @@ class PortfolioEnv:
         self.reset()
 
     def reset(self):
-        self.t = np.arange(self.num_envs)
+        self.t = np.random.randint(0, self.T - 1, size=self.num_envs)
         self.prev_actions = np.ones((self.num_envs, self.N)) / self.N
         return self.obs_windows[self.t]
 
-    def _normalize(self, action):
-        action = np.clip(action, 1e-6, 1.0)
-        return action / action.sum() 
+    # def _normalize(self, action):
+    #     action = np.clip(action, 1e-6, 1.0)
+    #     return action / action.sum() 
 
     def step(self, actions):
         rewards = np.zeros(self.num_envs)
@@ -29,7 +29,8 @@ class PortfolioEnv:
         for i in range(self.num_envs):
             t = self.t[i]
 
-            action = self._normalize(actions[i])
+            # action = self._normalize(actions[i])
+            action = actions[i]
             r = self.returns[t]
 
             reward = action @ r

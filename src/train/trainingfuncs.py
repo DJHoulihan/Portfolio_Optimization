@@ -62,6 +62,12 @@ def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=1.0):
  
     # Compute and apply gradients
     grads = tape.gradient(loss, agent.trainable_variables)
+    # temporary debug - check for None gradients
+    none_grads = [v.name for v, g in zip(agent.trainable_variables, grads) if g is None]
+    if none_grads:
+        print(f"None gradients for: {none_grads}")
+    else:
+        print(f"All gradients flowing, loss: {loss.numpy():.6f}")
     optimizer.apply_gradients(zip(grads, agent.trainable_variables))
 
 def collect_rollout(env, agent, buffer, rollout_len):
