@@ -42,7 +42,7 @@ def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=1.0):
     )
 
     # Compute trajectory Sharpe ratio (annualized)
-    sharpe = met.sharpe_ratio(rewards)
+    sharpe = met.sharpe_ratio_tf(rewards)
     
     with tf.GradientTape() as tape:
         T = tf.shape(obs)[0]
@@ -56,7 +56,7 @@ def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=1.0):
         pred_actions = tf.reshape(pred_actions, (T, B, -1))  # (T, B, N)
         pred_values = tf.reshape(pred_values, (T, B))        # (T, B)
 
-        policy_loss = -tf.reduce_mean(advantages * pred_actions)
+        policy_loss = -tf.reduce_mean(tf.expand_dims(advantages, -1) * pred_actions)
         value_loss = tf.reduce_mean((returns - pred_values) ** 2)
         loss = policy_loss + 0.5 * value_loss - sharpe_lambda * sharpe
  

@@ -11,6 +11,14 @@ def max_drawdown(returns):
     return np.max(drawdown)
 
 def sharpe_ratio(returns, eps=1e-8):
+    """Numpy version for metrics reporting"""
+    returns = np.asarray(returns, dtype=np.float32)
+    mean = returns.mean()
+    std = returns.std() + eps
+    return np.sqrt(252.0) * mean / std
+
+def sharpe_ratio_tf(returns, eps=1e-8):
+    """TF version for use inside GradientTape"""
     mean = tf.reduce_mean(returns)
     std = tf.math.reduce_std(returns) + eps
     return tf.sqrt(252.0) * mean / std
