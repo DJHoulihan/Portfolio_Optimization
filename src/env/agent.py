@@ -23,19 +23,19 @@ class PortfolioAgentCritic(Model):
         B, N, K, F = tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], tf.shape(x)[3]
 
         # Flatten assets for SREM
-        x_flat = tf.reshape(x, (B * N, K, F))  # (B*N, K, F)
+        # x_flat = tf.reshape(x, (B * N, K, F))  # (B*N, K, F)
 
         # SREM
-        z_flat = self.srem(x_flat, training=training)  # (B*N, d)
+        z = self.srem(x, training=training)  # (B*N, d)
 
         # Reshape back
-        z = tf.reshape(z_flat, (B, N, self.d))  # (B, N, d)
+        # z = tf.reshape(z_flat, (B, N, self.d))  # (B, N, d)
 
         # CAAN
         h = self.caan(z, training=training)  # (B, N, d)
 
         # Portfolio weights (Agent)
-        actions, _ = self.portfolio_gen(h, mask)
+        actions, _ = self.portfolio_gen(h, asset_mask = mask)
 
         # Value head (Critic)
         value = self.value_head(tf.reduce_mean(h, axis=1))

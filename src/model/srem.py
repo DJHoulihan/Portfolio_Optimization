@@ -40,7 +40,7 @@ class SREM(Layer):
 
         self.norm = LayerNormalization(epsilon=1e-6)
         self.dropout = Dropout(self.dropout_rate)
-        self.att_weight = Dense(1)
+        self.attn_weight = Dense(1)
 
     def call(self, x, training=False):
         """
