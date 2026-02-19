@@ -4,6 +4,8 @@ import src.env.agent as ag
 import src.train.trainingfuncs as tfu
 import src.config.config as cf
 import src.preprocess.datapull as dp
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 # import src.preprocess.dataprep as dpr
 
 def main(config):
@@ -33,7 +35,7 @@ def main(config):
         agent=agent,
         env=env,
         optimizer=optimizer,
-        num_epochs=config.training.num_epochs, 
+        num_epochs=config.training.epochs, 
         rollout_len=config.training.rollout_len,
         gamma=config.training.gamma,
         sharpe_lambda=config.training.sharpe_lambda,

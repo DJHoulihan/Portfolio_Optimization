@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 import src.config.config as cf
+from pathlib import Path
 
 def temporal_zscore_normalize(X):
     """
@@ -26,10 +27,11 @@ class DataHandler:
             returns     : (T, N)
         """
         # Load raw data
-        df = pd.read_parquet(self.config.data.data_path) # can change path in config.ini
+        project_root = Path(__file__).parent.parent.parent
+        df = pd.read_csv(project_root / self.config.data.data_path, delimiter = ',') # can change path in config.ini
 
         df = df.sort_values(["date", "permno"]) # assumes crsp format
-
+    
         # Fix asset universe 
         min_obs = self.config.data.min_obs
         max_assets = self.config.data.max_assets
@@ -53,7 +55,7 @@ class DataHandler:
         N = len(permnos)
 
         # Select features
-        exclude_cols = {"date", "permno"}
+        exclude_cols = {"date", "permno", "rdq"}
         feature_cols = [c for c in df.columns if c not in exclude_cols]
         assert "ret" in feature_cols, "`ret` should usually be included as a feature"
 
@@ -98,7 +100,7 @@ class DataHandler:
         # (T, N)
 
         # sanity checks
-        assert obs_windows.shape == (returns.shape[0], N, K, len(features))
+        assert obs_windows.shape == (returns.shape[0], N, K, features.shape[2])
         assert np.all(np.isfinite(obs_windows)), 'obs_window contains nan values'
 
         assert obs_windows.shape[0] == returns.shape[0]
