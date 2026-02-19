@@ -11,7 +11,6 @@
 - [Methodology](#methodology)
 - [Configuration](#configuration)
 - [Results](#results)
-- [License](#license)
 
 ## Overview
 
@@ -22,5 +21,3 @@
 ## Configuration
 
 ## Results
-
-## License
