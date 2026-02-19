@@ -34,7 +34,7 @@ class CAAN(Layer):
     def __init__(self, config):
         super(CAAN, self).__init__()
 
-        self.embed_dim = config.embed_dim
+        self.embed_dim = config.srem.embed_dim
         self.attention = tm.MultiHeadSelfAttention(embed_dim = self.embed_dim, num_heads= 1)
         self.winnerscore = WinnerScore(self.embed_dim)
 

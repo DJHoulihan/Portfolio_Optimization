@@ -6,7 +6,7 @@ class ConfigHandler:
     def __init__(self, config_file: str = "config.ini"):
         project_root = os.path.dirname(os.path.abspath(__file__))
         self.config_file = os.path.join(project_root, config_file)
-        self.parser = configparser.ConfigParser()
+        self.parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
 
     def read(self):
         self.parser.read(self.config_file)
@@ -32,6 +32,7 @@ class TrainingConfig:
     gamma: float
     sharpe_lambda: float
     lookback: int
+    rollout_len: int
     # reward_window: int
     # input_window: int
 
@@ -40,6 +41,8 @@ class TrainingConfig:
 class DataConfig:
     symbols: str
     data_path: str
+    max_assets: int
+    min_obs: int
 
 @dataclass(frozen=True)
 class GenConfig:
@@ -77,7 +80,8 @@ def load_config() -> AppConfig:
         learning_rate=parser.getfloat("TRAINING", "learning_rate"),
         gamma = parser.getfloat("TRAINING", "gamma"),
         sharpe_lambda = parser.getfloat("TRAINING", "sharpe_lambda"),
-        lookback = parser.getint("TRAINING", "lookback")
+        lookback = parser.getint("TRAINING", "lookback"),
+        rollout_len = parser.getint("TRAINING","rollout_len")
         # reward_window = parser.getint("TRAINING", "reward_window"),
         # input_window = parser.getint("TRAINING", "input_window")
     )
@@ -88,7 +92,9 @@ def load_config() -> AppConfig:
 
     data = DataConfig(
         symbols = parser.get("DATA",  "symbols"),
-        data_path=parser.get("DATA", "data_path")
+        data_path=parser.get("DATA", "data_path"),
+        max_assets=parser.getint("DATA", "max_assets"),
+        min_obs=parser.getint("DATA", "min_obs")
     )
 
     gen = GenConfig(
