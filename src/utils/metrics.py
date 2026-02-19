@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 
 def max_drawdown(returns):
     returns = np.asarray(returns)
@@ -10,10 +11,9 @@ def max_drawdown(returns):
     return np.max(drawdown)
 
 def sharpe_ratio(returns, eps=1e-8):
-    returns = np.asarray(returns)
-    mean = returns.mean()
-    std = returns.std() + eps
-    return np.sqrt(252) * mean / std
+    mean = tf.reduce_mean(returns)
+    std = tf.math.reduce_std(returns) + eps
+    return tf.sqrt(252.0) * mean / std
 
 def turnover(weights):
     """

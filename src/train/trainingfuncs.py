@@ -45,19 +45,21 @@ def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=1.0):
     sharpe = met.sharpe_ratio(rewards)
     
     with tf.GradientTape() as tape:
-        # Forward pass through agent
-        pred_actions, pred_values = agent(obs, training=True)  # (B, N), (B,)
+        T = tf.shape(obs)[0]
+        B = tf.shape(obs)[1]
+        
+        # merge T and B dimensions
+        obs_flat = tf.reshape(obs, (T * B, tf.shape(obs)[2], tf.shape(obs)[3], tf.shape(obs)[4]))  # (T*B, N, K, F)
+        
+        pred_actions, pred_values = agent(obs_flat, training=True)  # (T*B, N), (T*B,)
+        
+        pred_actions = tf.reshape(pred_actions, (T, B, -1))  # (T, B, N)
+        pred_values = tf.reshape(pred_values, (T, B))        # (T, B)
 
-        # Policy loss (actor) — encourage actions proportional to advantage
-        # Here we assume higher action value is better if advantage > 0
-        policy_loss = -tf.reduce_mean(advantages * rewards)
-
-        # Value loss (critic) — TD error
-        value_loss = tf.reduce_mean((returns - tf.squeeze(pred_values)) ** 2)
-
-        # Total loss with Sharpe bonus
+        policy_loss = -tf.reduce_mean(advantages * pred_actions)
+        value_loss = tf.reduce_mean((returns - pred_values) ** 2)
         loss = policy_loss + 0.5 * value_loss - sharpe_lambda * sharpe
-
+ 
     # Compute and apply gradients
     grads = tape.gradient(loss, agent.trainable_variables)
     optimizer.apply_gradients(zip(grads, agent.trainable_variables))

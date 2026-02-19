@@ -10,34 +10,60 @@ sys.path.append(project_root)
 from src.config.config import load_config
 
 # config = load_config()
+class WinnerScore(Layer):
+    def __init__(self, embed_dim):
+        super(WinnerScore, self).__init__()
+        
+        self.w_s = self.add_weight(
+            shape = (embed_dim, 1),
+            initializer = 'glorot_uniform',
+            trainable = True,
+            name = 'w_s'
+        )
 
+        self.e_s = self.add_weight(
+            shape = (1,),
+            initializer = 'glorot_uniform',
+            trainable = True,
+            name = 'e_s'
+        )
+    
+    def call(self, a):
+        
+        s = tf.matmul(a, self.w_s) + self.e_s
+        s = tf.tanh(s)
+        s = tf.squeeze(s, axis = -1)
+    
+        return s
+    
 class PortfolioGenerator(Layer):
     def __init__(self, config):
         super(PortfolioGenerator, self).__init__()
         self.fraction = config.gen.fraction
+        self.winnerscore = WinnerScore(config.srem.embed_dim)
     
-    def call(self, s, mask = None):
-
+    def call(self, x, asset_mask = None):
+        s = self.winnerscore(x)
         B = tf.shape(s)[0]
         N = tf.shape(s)[1]
         # d = tf.shape(s)[2]
 
         G = tf.maximum(1, tf.cast(tf.math.floor(self.fraction * tf.cast(N, tf.float32)), tf.int32))
 
-        if mask is not None:
-            s = tf.where(mask==0, tf.constant(-np.inf, dtype = tf.float32),s)
+        if asset_mask is not None:
+            s = tf.where(asset_mask==0, tf.constant(-np.inf, dtype = tf.float32),s)
         
         # first, sort assets
-        s_max = tf.reduce_max(s, axis=-1)
-        sorted_values, sort_indices = tf.nn.top_k(s_max, k = N, sorted = True)
+        # s_max = tf.reduce_max(s, axis=-1)
+        sorted_values, sort_indices = tf.nn.top_k(s, k = N, sorted = True)
 
         # select top G and bottom G asset indices
         top_indices = sort_indices[:, :G] # [B, G]
         bottom_indices = sort_indices[:, -G:] # [B, G]
 
         # select top and bottom scores (vectors)
-        top_scores = tf.gather(s_max, top_indices, batch_dims = 1) # [B, G]
-        bottom_scores = tf.gather(s_max, bottom_indices, batch_dims = 1) # [B, G]
+        top_scores = tf.gather(s, top_indices, batch_dims = 1) # [B, G]
+        bottom_scores = tf.gather(s, bottom_indices, batch_dims = 1) # [B, G]
 
         # calculate top and bottom weights
         top_weights = tf.nn.softmax(top_scores, axis=1)
