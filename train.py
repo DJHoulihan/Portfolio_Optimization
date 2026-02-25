@@ -5,6 +5,8 @@ import src.train.trainingfuncs as tfu
 import src.config.config as cf
 import src.preprocess.datapull as dp
 import os
+import warnings
+warnings.filterwarnings("ignore")
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 # import src.preprocess.dataprep as dpr
 
