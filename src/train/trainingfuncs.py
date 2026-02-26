@@ -3,7 +3,7 @@ import numpy as np
 from src.env import env as en
 from src.utils import metrics as met
 
-def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=1.0):
+def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=0.1):
     """
     Actor-Critic RL update for PortfolioAgent.
     Policy (actor) loss encourages actions proportional to advantages.
@@ -58,7 +58,9 @@ def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=1.0):
 
         policy_loss = -tf.reduce_mean(tf.expand_dims(advantages, -1) * pred_actions)
         value_loss = tf.reduce_mean((returns - pred_values) ** 2)
-        loss = policy_loss + 0.5 * value_loss - sharpe_lambda * sharpe
+        entropy = -tf.reduce_mean(pred_actions * tf.math.log(tf.nn.softmax(pred_actions, axis=-1) + 1e-8))
+        loss = policy_loss + 0.5 * value_loss - sharpe_lambda * sharpe - 0.01 * entropy
+        # loss = policy_loss + 0.5 * value_loss + 0.05 * entropy
  
     # Compute and apply gradients
     grads = tape.gradient(loss, agent.trainable_variables)
@@ -126,12 +128,12 @@ def train(agent, env, optimizer, num_epochs, rollout_len, gamma=0.99, sharpe_lam
         metrics = met.compute_metrics(buffer)
 
         print(
-            f"Epoch {epoch:04d} | "
-            f"Mean reward: {mean_reward:.6f}"
-            f"Return: {metrics['mean_return']:.5f} | "
+            f"Epoch {epoch:03d} | "
+            f"Mean reward: {mean_reward:.6f} | "
             f"Sharpe: {metrics['sharpe']:.2f} | "
             f"MDD: {metrics['max_drawdown']:.2%} | "
-            f"Turnover: {metrics['turnover']:.2f}"
+            f"Turnover: {metrics['turnover']:.4f}"
         )
+        # print(metrics)
 
 
