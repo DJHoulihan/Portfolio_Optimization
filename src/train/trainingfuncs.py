@@ -3,7 +3,7 @@ import numpy as np
 from src.env import env as en
 from src.utils import metrics as met
 
-def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=1.0):
+def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=0.1):
     """
     Actor-Critic RL update for PortfolioAgent.
     Policy (actor) loss encourages actions proportional to advantages.
@@ -59,8 +59,8 @@ def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=1.0):
         policy_loss = -tf.reduce_mean(tf.expand_dims(advantages, -1) * pred_actions)
         value_loss = tf.reduce_mean((returns - pred_values) ** 2)
         entropy = -tf.reduce_mean(pred_actions * tf.math.log(tf.nn.softmax(pred_actions, axis=-1) + 1e-8))
-        # loss = policy_loss + 0.5 * value_loss - sharpe_lambda * sharpe - 0.01 * entropy
-        loss = policy_loss + 0.5 * value_loss - 0.05 * entropy
+        loss = policy_loss + 0.5 * value_loss - sharpe_lambda * sharpe - 0.01 * entropy
+        # loss = policy_loss + 0.5 * value_loss + 0.05 * entropy
  
     # Compute and apply gradients
     grads = tape.gradient(loss, agent.trainable_variables)

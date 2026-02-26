@@ -43,7 +43,7 @@ def compute_metrics(buffer):
     mean_returns = rewards.mean(axis=1)    # (T,)
 
     metrics = {
-        "sharpe": sharpe_ratio(mean_returns),
+        "sharpe": sharpe_ratio(rewards),
         "max_drawdown": max_drawdown(mean_returns),
         "turnover": turnover(actions),
         "mean_return": mean_returns.mean(),

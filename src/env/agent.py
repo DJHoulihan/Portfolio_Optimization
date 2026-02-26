@@ -37,10 +37,9 @@ class PortfolioAgentCritic(Model):
         actions, _ = self.portfolio_gen(h, asset_mask = mask)
         actions = tf.clip_by_value(actions, -1.0, 1.0)
         actions = actions / (tf.reduce_sum(tf.abs(actions), axis=1, keepdims=True) + 1e-8)
-
-        if training and self.epsilon > 0.0:
-            noise = tf.random.normal(tf.shape(actions), mean=0.0, stddev=self.epsilon)
-            actions = actions + noise
+        
+        noise = tf.random.normal(tf.shape(actions), mean=0.0, stddev=self.epsilon)
+        actions = actions + noise
 
         # Value head (Critic)
         value = self.value_head(tf.reduce_mean(h, axis=1))
