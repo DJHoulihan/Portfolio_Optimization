@@ -71,6 +71,7 @@ def rl_update(agent, buffer, optimizer, gamma=0.99, sharpe_lambda=0.1):
     else:
         print(f"All gradients flowing, loss: {loss.numpy():.6f}")
     optimizer.apply_gradients(zip(grads, agent.trainable_variables))
+    return policy_loss.numpy(), value_loss.numpy()
 
 def collect_rollout(env, agent, buffer, rollout_len):
     """
@@ -102,6 +103,7 @@ def collect_rollout(env, agent, buffer, rollout_len):
 
 def train(agent, env, optimizer, num_epochs, rollout_len, gamma=0.99, sharpe_lambda=0.1):
     buffer = en.RolloutBuffer()
+    log = {key: [] for key in ["mean_reward","sharpe","max_drawdown","turnover","entropy","policy_loss","value_loss"]}
 
     for epoch in range(num_epochs):
         buffer.clear()
@@ -115,7 +117,7 @@ def train(agent, env, optimizer, num_epochs, rollout_len, gamma=0.99, sharpe_lam
         )
 
         # Update actor–critic
-        rl_update(
+        policy_loss, value_loss = rl_update(
             agent=agent,
             buffer=buffer,
             optimizer=optimizer,
@@ -124,8 +126,16 @@ def train(agent, env, optimizer, num_epochs, rollout_len, gamma=0.99, sharpe_lam
         )
 
         mean_reward = np.mean(buffer.rewards)
-
         metrics = met.compute_metrics(buffer)
+
+        # Logging metrics
+        log['mean_reward'].append(mean_reward)
+        log['sharpe'].append(metrics['sharpe'])
+        log['max_drawdown'].append(metrics['max_drawdown'])
+        log['turnover'].append(metrics['turnover'])
+        log['entropy'].append(metrics['entropy'])
+        log['policy_loss'].append(policy_loss)
+        log['value_loss'].append(value_loss)
 
         print(
             f"Epoch {epoch:03d} | "
@@ -134,6 +144,7 @@ def train(agent, env, optimizer, num_epochs, rollout_len, gamma=0.99, sharpe_lam
             f"MDD: {metrics['max_drawdown']:.2%} | "
             f"Turnover: {metrics['turnover']:.4f}"
         )
-        # print(metrics)
+
+    return log
 
 
