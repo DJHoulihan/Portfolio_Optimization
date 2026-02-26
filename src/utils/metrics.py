@@ -34,6 +34,16 @@ def turnover(weights):
 
     return np.mean(step_turnover)
 
+def compute_entropy(actions):
+    actions_flat = actions.reshape(-1, actions.shape[-1])  # (T*B, N)
+    actions_tf = tf.convert_to_tensor(actions_flat, dtype=tf.float32)
+    
+    # Clip to avoid log(0)
+    actions_tf = tf.clip_by_value(actions_tf, 1e-8, 1.0)
+    
+    entropy_per_portfolio = -tf.reduce_sum(actions_tf * tf.math.log(actions_tf), axis=1)
+    mean_entropy = float(tf.reduce_mean(entropy_per_portfolio).numpy())
+    return mean_entropy
 
 def compute_metrics(buffer):
     rewards = np.stack(buffer.rewards)     # (T, B)
@@ -48,6 +58,7 @@ def compute_metrics(buffer):
         "turnover": turnover(actions),
         "mean_return": mean_returns.mean(),
         "volatility": mean_returns.std(),
+        "entropy": compute_entropy(actions)
     }
 
     return metrics
