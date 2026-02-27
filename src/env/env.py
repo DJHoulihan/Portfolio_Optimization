@@ -1,7 +1,7 @@
 import numpy as np
 
 class PortfolioEnv:
-    def __init__(self, obs_windows, returns, num_envs = 8, cost_rate=0.01):
+    def __init__(self, obs_windows, returns, num_envs = 8, cost_rate=0.001):
         self.obs_windows = obs_windows
         self.returns = returns.copy()
         self.num_envs = num_envs
