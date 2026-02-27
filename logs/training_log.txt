@@ -1,0 +1,10 @@
+Epoch 000 | Mean reward: -0.008794 | Sharpe: -3.65 | MDD: 23.01% | Turnover: 0.5633 | Entropy: 0.0200 | Policy loss: 0.000189 | Value loss: 0.006629
+Epoch 001 | Mean reward: -0.012243 | Sharpe: -5.14 | MDD: 30.32% | Turnover: 0.5589 | Entropy: 0.0227 | Policy loss: -0.000013 | Value loss: 7.436653
+Epoch 002 | Mean reward: -0.012391 | Sharpe: -4.76 | MDD: 32.13% | Turnover: 0.5649 | Entropy: 0.0229 | Policy loss: -0.000059 | Value loss: 20.688459
+Epoch 003 | Mean reward: -0.016132 | Sharpe: -6.51 | MDD: 35.24% | Turnover: 0.5624 | Entropy: 0.0215 | Policy loss: -0.000114 | Value loss: 41.305687
+Epoch 004 | Mean reward: -0.015664 | Sharpe: -6.67 | MDD: 36.23% | Turnover: 0.5673 | Entropy: 0.0225 | Policy loss: -0.000078 | Value loss: 71.670280
+Epoch 005 | Mean reward: -0.003100 | Sharpe: -1.12 | MDD: 11.39% | Turnover: 0.5655 | Entropy: 0.0212 | Policy loss: 0.000223 | Value loss: 107.527008
+Epoch 006 | Mean reward: -0.007750 | Sharpe: -2.70 | MDD: 22.38% | Turnover: 0.5566 | Entropy: 0.0232 | Policy loss: -0.000130 | Value loss: 121.755127
+Epoch 007 | Mean reward: -0.012039 | Sharpe: -4.49 | MDD: 31.35% | Turnover: 0.5708 | Entropy: 0.0221 | Policy loss: 0.000052 | Value loss: 102.294487
+Epoch 008 | Mean reward: -0.006902 | Sharpe: -2.75 | MDD: 19.83% | Turnover: 0.5678 | Entropy: 0.0217 | Policy loss: -0.000028 | Value loss: 60.963268
+Epoch 009 | Mean reward: -0.010916 | Sharpe: -4.92 | MDD: 26.91% | Turnover: 0.5641 | Entropy: 0.0252 | Policy loss: 0.000067 | Value loss: 21.979198
