@@ -28,7 +28,8 @@ class APIConfig:
 class TrainingConfig:
     batch_size: int
     epochs: int
-    learning_rate: float
+    actor_lr: float
+    critic_lr: float
     gamma: float
     sharpe_lambda: float
     lookback: int
@@ -77,7 +78,8 @@ def load_config() -> AppConfig:
     training = TrainingConfig(
         batch_size=parser.getint("TRAINING", "batch_size"),
         epochs=parser.getint("TRAINING", "epochs"),
-        learning_rate=parser.getfloat("TRAINING", "learning_rate"),
+        actor_lr=parser.getfloat("TRAINING", "actor_lr"),
+        critic_lr=parser.getfloat("TRAINING", "critic_lr"),
         gamma = parser.getfloat("TRAINING", "gamma"),
         sharpe_lambda = parser.getfloat("TRAINING", "sharpe_lambda"),
         lookback = parser.getint("TRAINING", "lookback"),

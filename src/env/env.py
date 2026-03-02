@@ -1,4 +1,8 @@
 import numpy as np
+import os
+import warnings
+warnings.filterwarnings("ignore")
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 class PortfolioEnv:
     def __init__(self, obs_windows, returns, num_envs = 8, cost_rate=0.001):
