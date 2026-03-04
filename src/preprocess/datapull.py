@@ -86,8 +86,8 @@ class DataHandler:
 
         # ----- Split data chronologically -----
         T = obs_windows.shape[0]
-        train_frac = self.config.data.train_frac
-        val_frac   = self.config.data.val_frac
+        train_frac = self.config.env.train_frac
+        val_frac   = self.config.env.val_frac
 
         train_end = int(T * train_frac)
         val_end   = int(T * (train_frac + val_frac))

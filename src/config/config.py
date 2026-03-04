@@ -54,6 +54,9 @@ class GenConfig:
 @dataclass(frozen=True)
 class EnvConfig:
     num_envs: int
+    train_frac: float
+    val_frac: float
+    test_frac: float
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -108,7 +111,10 @@ def load_config() -> AppConfig:
     )
 
     env = EnvConfig(
-        num_envs=parser.getint("ENV", "num_envs")
+        num_envs=parser.getint("ENV", "num_envs"),
+        train_frac=parser.getfloat("ENV", "train_frac"),
+        val_frac=parser.getfloat("ENV", "val_frac"),
+        test_frac=parser.getfloat("ENV", "test_frac")
     )
 
     return AppConfig(
