@@ -34,6 +34,8 @@ class TrainingConfig:
     sharpe_lambda: float
     lookback: int
     rollout_len: int
+    critic_updates: int
+    grad_clip: float
     # reward_window: int
     # input_window: int
 
@@ -83,7 +85,9 @@ def load_config() -> AppConfig:
         gamma = parser.getfloat("TRAINING", "gamma"),
         sharpe_lambda = parser.getfloat("TRAINING", "sharpe_lambda"),
         lookback = parser.getint("TRAINING", "lookback"),
-        rollout_len = parser.getint("TRAINING","rollout_len")
+        rollout_len = parser.getint("TRAINING","rollout_len"),
+        critic_updates = parser.getint("TRAINING","critic_updates"),
+        grad_clip = parser.getint("TRAINING","grad_clip") 
         # reward_window = parser.getint("TRAINING", "reward_window"),
         # input_window = parser.getint("TRAINING", "input_window")
     )

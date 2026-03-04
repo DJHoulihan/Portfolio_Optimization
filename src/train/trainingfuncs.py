@@ -3,12 +3,12 @@ import numpy as np
 from src.env import env as en
 from src.utils import metrics as met
 
-def non_grads(agent, loss, grads):
-    none_grads = [v.name for v, g in zip(agent.trainable_variables, grads) if g is None]
-    if none_grads:
-        print(f"None gradients for: {none_grads}")
-    else:
-        print(f"All gradients flowing, loss: {loss.numpy():.6f}")
+# def non_grads(agent, loss, grads):
+#     none_grads = [v.name for v, g in zip(agent.trainable_variables, grads) if g is None]
+#     if none_grads:
+#         print(f"None gradients for: {none_grads}")
+#     else:
+#         print(f"All gradients flowing, loss: {loss.numpy():.6f}")
 
 def rl_update(agent, buffer, 
               actor_optimizer, 
@@ -39,7 +39,7 @@ def rl_update(agent, buffer,
     
     # Convert buffer lists to tensors
     obs = tf.convert_to_tensor(buffer.obs, dtype=tf.float32)          # (T, B, N, K, F)
-    actions = tf.convert_to_tensor(buffer.actions, dtype=tf.float32)  # (T, B, N)
+    # actions = tf.convert_to_tensor(buffer.actions, dtype=tf.float32)  # (T, B, N)
     rewards = tf.convert_to_tensor(buffer.rewards, dtype=tf.float32)  # (T, B)
     values = tf.convert_to_tensor(buffer.values, dtype=tf.float32)    # (T, B)
 
@@ -62,60 +62,73 @@ def rl_update(agent, buffer,
     # merge T and B dimensions
     obs_flat = tf.reshape(obs, (T * B, tf.shape(obs)[2], tf.shape(obs)[3], tf.shape(obs)[4]))  # (T*B, N, K, F)
     
-    with tf.GradientTape(persistent = True) as tape:       
-        pred_actions, pred_values = agent(obs_flat, training=True)  # (T*B, N), (T*B,)
-        
-        pred_actions = tf.reshape(pred_actions, (T, B, -1))  # (T, B, N)
-        pred_values = tf.reshape(pred_values, (T, B))        # (T, B)
+  
+    # CRITIC UPDATES (K times)
+    # =====================================================
+    for _ in range(critic_updates):
+        with tf.GradientTape() as tape:
+            _, pred_values = agent(obs_flat, training=True)
+            pred_values = tf.reshape(pred_values, (T, B))
 
-        # Actor Loss
-        policy_loss = -tf.reduce_mean(tf.expand_dims(advantages, -1) * pred_actions)
-        entropy = -tf.reduce_mean(pred_actions * tf.math.log(tf.nn.softmax(pred_actions, axis=-1) + 1e-8))
-        actor_loss = policy_loss - 0.01 * entropy - sharpe_lambda * sharpe
+            value_loss = tf.reduce_mean((returns - pred_values) ** 2)
 
-        # Critic Loss
-        value_loss = tf.reduce_mean((returns - pred_values) ** 2)
-        
-        # loss = policy_loss + 0.5 * value_loss - sharpe_lambda * sharpe - 0.01 * entropy
-        # loss = policy_loss + 0.5 * value_loss + 0.05 * entropy
- 
-    # Compute and apply gradients
+        critic_vars = (
+            agent.srem.trainable_variables +
+            agent.caan.trainable_variables +
+            agent.value_head.trainable_variables
+        )
+
+        critic_grads = tape.gradient(value_loss, critic_vars)
+        critic_grads = [
+            tf.clip_by_norm(g, grad_clip) if g is not None else None
+            for g in critic_grads
+        ]
+        critic_optimizer.apply_gradients(zip(critic_grads, critic_vars))
+
+    
+    # ACTOR UPDATE 
+    # =====================================================
+    with tf.GradientTape() as tape:
+        pred_actions, pred_values = agent(obs_flat, training=True)
+
+        pred_actions = tf.reshape(pred_actions, (T, B, -1))
+
+        # If these are logits → use softmax
+        probs = tf.nn.softmax(pred_actions, axis=-1)
+
+        policy_loss = -tf.reduce_mean(
+            tf.expand_dims(advantages, -1) * probs
+        )
+
+        entropy = -tf.reduce_mean(
+            probs * tf.math.log(probs + 1e-8)
+        )
+
+        # actor_loss =  -sharpe #- 0.01 * entropy 
+        actor_loss = policy_loss - sharpe_lambda * sharpe #- 0.01 * entropy 
+
     actor_vars = (
-    agent.srem.trainable_variables +
-    agent.caan.trainable_variables +
-    agent.portfolio_gen.trainable_variables
-    )
-
-    critic_vars = (
         agent.srem.trainable_variables +
         agent.caan.trainable_variables +
-        agent.value_head.trainable_variables
+        agent.portfolio_gen.trainable_variables
     )
 
-    # Updating critic K times before actor
-    for _ in range(critic_updates):
-        critic_grads = tape.gradient(value_loss, critic_vars)
-        critic_grads = [tf.clip_by_norm(g, grad_clip) if g is not None else None for g in critic_grads]
-        critic_optimizer.apply_gradients(zip(critic_grads, critic_vars))
-    
-    none_grads = [v.name for v, g in zip(critic_vars, critic_grads) if g is None]
-    if none_grads:
-        print(f"(Critic) None gradients for: {none_grads}")
-    else:
-        print(f"(Critic) All gradients flowing, loss: {value_loss.numpy():.6f}")
-    
-    # Actor Gradients
     actor_grads = tape.gradient(actor_loss, actor_vars)
-    actor_grads = [tf.clip_by_norm(g, grad_clip) if g is not None else None for g in actor_grads]
+    actor_grads = [
+        tf.clip_by_norm(g, grad_clip) if g is not None else None
+        for g in actor_grads
+    ]
     actor_optimizer.apply_gradients(zip(actor_grads, actor_vars))
 
-    none_grads = [v.name for v, g in zip(actor_vars, actor_grads) if g is None]
-    if none_grads:
-        print(f"(Actor) None gradients for: {none_grads}")
+    # Making sure gradients are flowing, and printing each loss
+    none_actor_grads = [v.name for v, g in zip(agent.trainable_variables, actor_grads) if g is None]
+    none_critic_grads = [v.name for v, g in zip(agent.trainable_variables, critic_grads) if g is None]
+    if none_actor_grads:
+        print(f"(Actor) None gradients for: {none_actor_grads}")
+    elif none_critic_grads:
+        print(f"(Actor) None gradients for: {none_critic_grads}")
     else:
-        print(f"(Actor) All gradients flowing, loss: {actor_loss.numpy():.6f}")
-
-    del tape
+        print(f"All gradients flowing, loss: (Actor) {actor_loss.numpy():.6f}", f"(Critic) {value_loss.numpy():.6f}")
 
     return policy_loss.numpy(), actor_loss.numpy(), value_loss.numpy()
 
